@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">情感日历</string>
+    <string name="notification_channel_name">事件提醒</string>
+    <string name="notification_channel_desc">纪念日、生日与倒数日提醒</string>
+</resources>
