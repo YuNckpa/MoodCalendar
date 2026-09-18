@@ -1,12 +1,10 @@
 package com.moodcalendar.app.data.social
 
 /**
- * Phase 2 (not implemented in MVP):
- * - User / auth & cloud sync
- * - Friendship, FriendGroup, GroupMember
- * - Mood visibility enforcement (PRIVATE / FRIENDS_ALL / GROUP)
- * - Image upload + CDN
- *
- * Local models already reserve ownerId / syncId / visibility / groupId.
+ * Phase 2 implemented via:
+ * - [com.moodcalendar.app.data.auth.AuthRepository]
+ * - [com.moodcalendar.app.data.sync.SyncEngine]
+ * - [SocialRepository]
  */
+@Deprecated("Replaced by AuthRepository / SyncEngine / SocialRepository", level = DeprecationLevel.WARNING)
 object Phase2SocialPlaceholder

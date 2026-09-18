@@ -54,6 +54,8 @@ data class EventEditUiState(
     val backgroundImageUri: String? = null,
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
+    val ownerId: String? = null,
+    val syncId: String? = null,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
     val error: String? = null
@@ -121,7 +123,9 @@ class EventEditViewModel(
                     },
                     backgroundImageUri = existing.backgroundImageUri,
                     sortOrder = existing.sortOrder,
-                    createdAt = existing.createdAt
+                    createdAt = existing.createdAt,
+                    ownerId = existing.ownerId,
+                    syncId = existing.syncId
                 )
             }
         } else {
@@ -349,7 +353,9 @@ class EventEditViewModel(
                         lunarMonth = if (state.calendarSystem == CalendarSystem.LUNAR) state.lunarMonth else lunar.month,
                         lunarDay = if (state.calendarSystem == CalendarSystem.LUNAR) state.lunarDay else lunar.day,
                         sortOrder = state.sortOrder,
-                        createdAt = state.createdAt
+                        createdAt = state.createdAt,
+                        ownerId = state.ownerId,
+                        syncId = state.syncId
                     )
                 )
             }.onSuccess {

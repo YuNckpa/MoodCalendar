@@ -7,6 +7,8 @@ object Routes {
     const val SETTINGS = "settings"
     const val SETTINGS_THEME = "settings/theme"
     const val SETTINGS_REMINDER = "settings/reminder"
+    const val SETTINGS_AUTH = "settings/auth"
+    const val SOCIAL = "social"
     const val EVENT_EDIT = "event_edit?eventId={eventId}&date={date}"
     const val MOOD_EDIT = "mood_edit?moodId={moodId}&date={date}"
 

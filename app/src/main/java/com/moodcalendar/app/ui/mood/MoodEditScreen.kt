@@ -218,7 +218,7 @@ fun MoodEditScreen(
                 }
             }
 
-            Text("可见性（二期社交生效）", style = MaterialTheme.typography.titleMedium)
+            Text("可见性（登录后对好友生效）", style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MoodVisibility.entries.forEach { vis ->
                     FilterChip(

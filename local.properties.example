@@ -1,2 +1,6 @@
-## Copy to local.properties and set your SDK path
-sdk.dir=C\:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
+## Copy to local.properties (do not commit secrets)
+sdk.dir=C\:\\Users\\YOU\\AppData\\Local\\Android\\Sdk
+
+## Supabase (Phase 2)
+supabase.url=https://YOUR_PROJECT.supabase.co
+supabase.anonKey=YOUR_ANON_KEY

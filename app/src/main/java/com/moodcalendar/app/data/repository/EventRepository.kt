@@ -13,6 +13,7 @@ import com.moodcalendar.app.data.model.Recurrence
 import com.moodcalendar.app.data.model.YearlyMode
 import com.moodcalendar.app.reminder.ReminderScheduler
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 
 data class CalendarEvent(
     val id: Long = 0,
@@ -38,7 +39,9 @@ data class CalendarEvent(
     val sortOrder: Int = 0,
     val archived: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val ownerId: String? = null,
+    val syncId: String? = null
 )
 
 fun CalendarEventEntity.toDomain() = CalendarEvent(
@@ -65,7 +68,9 @@ fun CalendarEventEntity.toDomain() = CalendarEvent(
     sortOrder = sortOrder,
     archived = archived,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    ownerId = ownerId,
+    syncId = syncId
 )
 
 fun CalendarEvent.toEntity() = CalendarEventEntity(
@@ -92,30 +97,45 @@ fun CalendarEvent.toEntity() = CalendarEventEntity(
     sortOrder = sortOrder,
     archived = archived,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    ownerId = ownerId,
+    syncId = syncId
 )
 
 class EventRepository(
     private val dao: CalendarEventDao,
-    private val scheduler: ReminderScheduler
+    private val scheduler: ReminderScheduler,
+    private var onLocalChanged: (suspend () -> Unit)? = null
 ) {
+    fun setOnLocalChanged(listener: (suspend () -> Unit)?) {
+        onLocalChanged = listener
+    }
+
     fun observeEvents(): Flow<List<CalendarEventEntity>> = dao.observeActive()
 
     suspend fun getById(id: Long): CalendarEvent? = dao.getById(id)?.toDomain()
 
     fun observeById(id: Long): Flow<CalendarEventEntity?> = dao.observeById(id)
 
-    suspend fun save(event: CalendarEvent): Long {
+    suspend fun getAllEntities(): List<CalendarEventEntity> = dao.getAll()
+
+    suspend fun getBySyncId(syncId: String): CalendarEventEntity? = dao.getBySyncId(syncId)
+
+    suspend fun save(
+        event: CalendarEvent,
+        ownerIdOverride: String? = null,
+        notifySync: Boolean = true
+    ): Long {
         val now = System.currentTimeMillis()
+        val existing = if (event.id != 0L) dao.getById(event.id) else null
+        val syncId = event.syncId ?: existing?.syncId ?: UUID.randomUUID().toString()
+        val ownerId = ownerIdOverride ?: event.ownerId ?: existing?.ownerId
         val entity = event.toEntity().copy(
             updatedAt = now,
             createdAt = if (event.id == 0L) now else event.createdAt,
-            sortOrder = if (event.id == 0L && event.sortOrder == 0) {
-                // Keep 0 for new items so auto-sort still applies until user reorders
-                0
-            } else {
-                event.sortOrder
-            }
+            sortOrder = if (event.id == 0L && event.sortOrder == 0) 0 else event.sortOrder,
+            syncId = syncId,
+            ownerId = ownerId
         )
         val id = if (entity.id == 0L) {
             dao.insert(entity)
@@ -125,7 +145,19 @@ class EventRepository(
         }
         val saved = dao.getById(id)?.toDomain() ?: return id
         runCatching { scheduler.schedule(saved) }
+        if (notifySync) runCatching { onLocalChanged?.invoke() }
         return id
+    }
+
+    suspend fun upsertFromCloud(entity: CalendarEventEntity) {
+        val existing = entity.syncId?.let { dao.getBySyncId(it) }
+        if (existing != null) {
+            dao.update(entity.copy(id = existing.id))
+            runCatching { scheduler.schedule(entity.copy(id = existing.id).toDomain()) }
+        } else {
+            val id = dao.insert(entity.copy(id = 0))
+            runCatching { scheduler.schedule(entity.copy(id = id).toDomain()) }
+        }
     }
 
     suspend fun updateSortOrders(orderedIds: List<Long>) {
@@ -133,12 +165,24 @@ class EventRepository(
         val entities = orderedIds.mapIndexedNotNull { index, id ->
             dao.getById(id)?.copy(sortOrder = index + 1, updatedAt = now)
         }
-        if (entities.isNotEmpty()) dao.updateAll(entities)
+        if (entities.isNotEmpty()) {
+            dao.updateAll(entities)
+            runCatching { onLocalChanged?.invoke() }
+        }
     }
 
-    suspend fun delete(id: Long) {
+    suspend fun delete(id: Long, notifySync: Boolean = true): CalendarEventEntity? {
+        val existing = dao.getById(id)
         scheduler.cancel(id)
         dao.deleteById(id)
+        if (notifySync) runCatching { onLocalChanged?.invoke() }
+        return existing
+    }
+
+    suspend fun deleteBySyncId(syncId: String) {
+        val existing = dao.getBySyncId(syncId) ?: return
+        scheduler.cancel(existing.id)
+        dao.deleteById(existing.id)
     }
 
     suspend fun getAllActive(): List<CalendarEvent> = dao.getActive().map { it.toDomain() }

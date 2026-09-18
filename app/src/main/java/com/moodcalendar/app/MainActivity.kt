@@ -18,6 +18,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,8 +31,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.moodcalendar.app.ui.auth.AuthScreen
+import com.moodcalendar.app.ui.auth.AuthViewModel
 import com.moodcalendar.app.ui.calendar.CalendarScreen
 import com.moodcalendar.app.ui.calendar.CalendarViewModel
+import com.moodcalendar.app.ui.components.LoginRequiredDialog
 import com.moodcalendar.app.ui.events.EventEditScreen
 import com.moodcalendar.app.ui.events.EventEditViewModel
 import com.moodcalendar.app.ui.events.EventListScreen
@@ -43,6 +49,8 @@ import com.moodcalendar.app.ui.settings.ReminderSettingsScreen
 import com.moodcalendar.app.ui.settings.SettingsScreen
 import com.moodcalendar.app.ui.settings.SettingsViewModel
 import com.moodcalendar.app.ui.settings.ThemeSettingsScreen
+import com.moodcalendar.app.ui.social.FriendsFeedScreen
+import com.moodcalendar.app.ui.social.SocialViewModel
 import com.moodcalendar.app.ui.theme.MoodCalendarTheme
 import com.moodcalendar.app.ui.theme.ThemeViewModel
 
@@ -73,6 +81,25 @@ private fun MoodCalendarAppRoot(app: MoodCalendarApp) {
         Routes.EVENTS,
         Routes.MOODS,
         Routes.SETTINGS
+    )
+    val session by app.container.authRepository.session.collectAsStateWithLifecycle()
+    var showLoginGate by remember { mutableStateOf(false) }
+
+    fun openSocialOrGate() {
+        if (session == null) {
+            showLoginGate = true
+        } else {
+            navController.navigate(Routes.SOCIAL)
+        }
+    }
+
+    LoginRequiredDialog(
+        visible = showLoginGate,
+        onDismiss = { showLoginGate = false },
+        onGoLogin = {
+            showLoginGate = false
+            navController.navigate(Routes.SETTINGS_AUTH)
+        }
     )
 
     Scaffold(
@@ -172,13 +199,49 @@ private fun MoodCalendarAppRoot(app: MoodCalendarApp) {
                     viewModel = vm,
                     onOpenMood = { id, date ->
                         navController.navigate(Routes.moodEdit(moodId = id, date = date))
-                    }
+                    },
+                    onOpenSocial = { openSocialOrGate() }
                 )
             }
             composable(Routes.SETTINGS) {
+                val accountSubtitle = session?.let {
+                    "${it.displayName.ifBlank { it.email }} · 已登录"
+                } ?: "未登录，本地功能仍可用"
                 SettingsScreen(
+                    accountSubtitle = accountSubtitle,
+                    onOpenAccount = { navController.navigate(Routes.SETTINGS_AUTH) },
+                    onOpenSocial = { openSocialOrGate() },
                     onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
                     onOpenReminder = { navController.navigate(Routes.SETTINGS_REMINDER) }
+                )
+            }
+            composable(Routes.SETTINGS_AUTH) {
+                val vm: AuthViewModel = viewModel(
+                    factory = AuthViewModel.factory(
+                        app,
+                        app.container.authRepository,
+                        app.container.syncEngine
+                    )
+                )
+                AuthScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Routes.SOCIAL) {
+                val vm: SocialViewModel = viewModel(
+                    factory = SocialViewModel.factory(
+                        app.container.authRepository,
+                        app.container.socialRepository
+                    )
+                )
+                FriendsFeedScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onNeedLogin = {
+                        navController.popBackStack()
+                        showLoginGate = true
+                    }
                 )
             }
             composable(Routes.SETTINGS_THEME) {

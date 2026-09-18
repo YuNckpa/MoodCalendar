@@ -17,8 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,12 +43,22 @@ import com.moodcalendar.app.ui.components.SoftCoverBackground
 @Composable
 fun MoodJournalScreen(
     viewModel: MoodJournalViewModel,
-    onOpenMood: (moodId: Long, date: String) -> Unit
+    onOpenMood: (moodId: Long, date: String) -> Unit,
+    onOpenSocial: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("感情记录") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("感情记录") },
+                actions = {
+                    IconButton(onClick = onOpenSocial) {
+                        Icon(Icons.Outlined.People, contentDescription = "好友动态")
+                    }
+                }
+            )
+        }
     ) { padding ->
         Column(
             modifier = Modifier

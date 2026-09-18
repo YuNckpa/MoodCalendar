@@ -35,8 +35,11 @@ data class MoodEditUiState(
     val visibility: MoodVisibility = MoodVisibility.FRIENDS_ALL,
     val isPeriod: Boolean = false,
     val imageUris: List<String> = emptyList(),
+    val remoteUrlByLocalUri: Map<String, String?> = emptyMap(),
     val moodOptions: List<MoodPreset> = BuiltInMoods.presets,
     val createdAt: Long = System.currentTimeMillis(),
+    val ownerId: String? = null,
+    val syncId: String? = null,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
     val deleted: Boolean = false,
@@ -80,7 +83,10 @@ class MoodEditViewModel(
                     visibility = existing.visibility,
                     isPeriod = existing.isPeriod,
                     imageUris = existing.images.map { it.localUri },
-                    createdAt = existing.createdAt
+                    remoteUrlByLocalUri = existing.images.associate { it.localUri to it.remoteUrl },
+                    createdAt = existing.createdAt,
+                    ownerId = existing.ownerId,
+                    syncId = existing.syncId
                 )
             }
         }
@@ -141,9 +147,15 @@ class MoodEditViewModel(
                     visibility = state.visibility,
                     isPeriod = state.isPeriod,
                     images = persisted.mapIndexed { index, uri ->
-                        MoodImage(localUri = uri, sortOrder = index)
+                        MoodImage(
+                            localUri = uri,
+                            sortOrder = index,
+                            remoteUrl = state.remoteUrlByLocalUri[uri]
+                        )
                     },
-                    createdAt = state.createdAt
+                    createdAt = state.createdAt,
+                    ownerId = state.ownerId,
+                    syncId = state.syncId
                 )
             )
             base.update { it.copy(isSaving = false, saved = true) }

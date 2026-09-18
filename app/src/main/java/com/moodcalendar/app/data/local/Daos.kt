@@ -16,6 +16,12 @@ interface CalendarEventDao {
     @Query("SELECT * FROM calendar_events WHERE archived = 0 ORDER BY targetDate ASC")
     suspend fun getActive(): List<CalendarEventEntity>
 
+    @Query("SELECT * FROM calendar_events")
+    suspend fun getAll(): List<CalendarEventEntity>
+
+    @Query("SELECT * FROM calendar_events WHERE syncId = :syncId LIMIT 1")
+    suspend fun getBySyncId(syncId: String): CalendarEventEntity?
+
     @Query("SELECT * FROM calendar_events WHERE id = :id")
     suspend fun getById(id: Long): CalendarEventEntity?
 
@@ -48,6 +54,12 @@ interface MoodEntryDao {
 
     @Query("SELECT * FROM mood_entries WHERE id = :id")
     suspend fun getById(id: Long): MoodEntryEntity?
+
+    @Query("SELECT * FROM mood_entries")
+    suspend fun getAll(): List<MoodEntryEntity>
+
+    @Query("SELECT * FROM mood_entries WHERE syncId = :syncId LIMIT 1")
+    suspend fun getBySyncId(syncId: String): MoodEntryEntity?
 
     @Query("SELECT DISTINCT date FROM mood_entries WHERE date BETWEEN :start AND :end")
     suspend fun datesWithMood(start: String, end: String): List<String>

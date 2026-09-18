@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    accountSubtitle: String,
+    onOpenAccount: () -> Unit,
+    onOpenSocial: () -> Unit,
     onOpenTheme: () -> Unit,
     onOpenReminder: () -> Unit
 ) {
@@ -40,7 +43,25 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text("设置", style = MaterialTheme.typography.titleLarge)
+            Text("账号", style = MaterialTheme.typography.titleLarge)
+            SettingsNavRow(
+                title = "登录 / 账号",
+                subtitle = accountSubtitle,
+                onClick = onOpenAccount
+            )
+            HorizontalDivider()
+            SettingsNavRow(
+                title = "好友与动态",
+                subtitle = "好友、点赞、评论、收藏",
+                onClick = onOpenSocial
+            )
+            HorizontalDivider()
+
+            Text(
+                "设置",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 20.dp)
+            )
             SettingsNavRow(title = "主题风格", subtitle = "男生蓝 / 女生粉", onClick = onOpenTheme)
             HorizontalDivider()
             SettingsNavRow(title = "提醒权限", subtitle = "通知与精确闹钟", onClick = onOpenReminder)
@@ -52,7 +73,8 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
             )
             Text(
-                "MoodCalendar：本地日历、纪念日 / 倒数日 / 生日、情感记录与提醒。\n好友、分组与云端同步将在二期开放。",
+                "MoodCalendar：本地日历、纪念日 / 倒数日 / 生日、情感记录与提醒。\n" +
+                    "登录后可云端同步心情 / 事件 / 设置，并与好友互动（点赞、评论、收藏）。未登录仍可使用全部本地功能。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -12,5 +12,7 @@ class MoodCalendarApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         ReminderReceiver.ensureChannel(this)
+        // Silent sync if session already exists
+        container.syncEngine.syncAfterAppStart()
     }
 }
